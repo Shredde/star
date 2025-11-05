@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>交互式思维导图</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: "Inter", "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: radial-gradient(circle at top, #f8fafc, #e2e8f0);
+      color: #0f172a;
+    }
+
+    #app {
+      display: flex;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    .sidebar {
+      width: 280px;
+      background: rgba(15, 23, 42, 0.96);
+      color: #e2e8f0;
+      padding: 28px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      border-right: 1px solid rgba(148, 163, 184, 0.15);
+    }
+
+    .sidebar h1 {
+      margin: 0;
+      font-size: 1.65rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .sidebar p {
+      margin: 0;
+      line-height: 1.5;
+      color: rgba(226, 232, 240, 0.7);
+      font-size: 0.95rem;
+    }
+
+    .sidebar section {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .sidebar label {
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: rgba(148, 163, 184, 0.7);
+    }
+
+    .sidebar input,
+    .sidebar select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background: rgba(15, 23, 42, 0.55);
+      color: #f8fafc;
+      font-size: 0.95rem;
+      transition: border 0.2s, box-shadow 0.2s;
+    }
+
+    .sidebar input:focus,
+    .sidebar select:focus {
+      outline: none;
+      border-color: rgba(56, 189, 248, 0.9);
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+    }
+
+    .sidebar button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 11px 18px;
+      border-radius: 999px;
+      border: none;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+      background: linear-gradient(135deg, #38bdf8, #22d3ee);
+      color: #0f172a;
+      box-shadow: 0 15px 35px -20px rgba(14, 165, 233, 0.85);
+    }
+
+    .sidebar button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 20px 40px -24px rgba(14, 165, 233, 0.95);
+    }
+
+    .sidebar button:active {
+      transform: translateY(0);
+    }
+
+    .mindmap {
+      position: relative;
+      flex: 1;
+      background: radial-gradient(circle at center, rgba(255, 255, 255, 0.98), rgba(226, 232, 240, 0.9));
+      overflow: hidden;
+    }
+
+    .mindmap::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(circle at center, rgba(15, 23, 42, 0.08) 0, transparent 45%);
+      pointer-events: none;
+      opacity: 0.35;
+    }
+
+    #canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    #canvas path {
+      fill: none;
+      stroke: rgba(37, 99, 235, 0.28);
+      stroke-width: 2.4;
+      stroke-linecap: round;
+    }
+
+    .node {
+      position: absolute;
+      min-width: 120px;
+      padding: 16px 20px;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 18px;
+      border: 2px solid rgba(148, 163, 184, 0.45);
+      box-shadow: 0 26px 45px -36px rgba(15, 23, 42, 0.85);
+      font-weight: 600;
+      color: #0f172a;
+      cursor: grab;
+      user-select: none;
+      transition: box-shadow 0.2s ease, transform 0.2s ease;
+      touch-action: none;
+      backdrop-filter: blur(4px);
+    }
+
+    .node:hover {
+      box-shadow: 0 26px 60px -36px rgba(15, 23, 42, 0.95);
+    }
+
+    .node.dragging {
+      cursor: grabbing;
+      box-shadow: 0 28px 55px -30px rgba(15, 23, 42, 0.65);
+    }
+
+    .node[data-root="true"] {
+      background: linear-gradient(135deg, #2563eb, #38bdf8);
+      color: #fff;
+      border-color: transparent;
+      box-shadow: 0 40px 70px -40px rgba(37, 99, 235, 0.95);
+    }
+
+    .node[data-root="true"] small {
+      color: rgba(241, 245, 249, 0.75);
+    }
+
+    .node .node-label {
+      display: block;
+      pointer-events: none;
+    }
+
+    .node small {
+      display: block;
+      margin-top: 6px;
+      font-size: 0.7rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: rgba(71, 85, 105, 0.65);
+      pointer-events: none;
+    }
+
+    .sidebar ul {
+      margin: 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 6px;
+      color: rgba(226, 232, 240, 0.65);
+      font-size: 0.9rem;
+    }
+
+    .sidebar footer {
+      margin-top: auto;
+      font-size: 0.75rem;
+      color: rgba(148, 163, 184, 0.6);
+    }
+
+    @media (max-width: 900px) {
+      #app {
+        flex-direction: column;
+      }
+
+      .sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <aside class="sidebar">
+      <section>
+        <h1>思维导图</h1>
+        <p>创建属于你的结构化脑图。添加节点、拖动位置、双击编辑，让想法清晰呈现。</p>
+      </section>
+      <section>
+        <form id="add-node-form">
+          <div>
+            <label for="node-title">节点标题</label>
+            <input id="node-title" name="title" type="text" required placeholder="例如：创意发散">
+          </div>
+          <div>
+            <label for="parent">父节点</label>
+            <select id="parent" name="parent"></select>
+          </div>
+          <button type="submit">添加节点</button>
+        </form>
+      </section>
+      <section>
+        <label>使用技巧</label>
+        <ul>
+          <li>拖动节点调整结构。</li>
+          <li>双击节点或按 Enter 编辑标题。</li>
+          <li>在左侧选择父节点批量添加分支。</li>
+        </ul>
+        <button id="reset-map" type="button">重置导图</button>
+      </section>
+      <footer>Made with vanilla HTML · CSS · JavaScript</footer>
+    </aside>
+    <main class="mindmap">
+      <svg id="canvas" role="presentation" aria-hidden="true"></svg>
+    </main>
+  </div>
+  <script>
+    (() => {
+      const workspace = document.querySelector('.mindmap');
+      const canvas = document.getElementById('canvas');
+      const parentSelect = document.getElementById('parent');
+      const form = document.getElementById('add-node-form');
+      const resetButton = document.getElementById('reset-map');
+      const nodes = new Map();
+      let rootNodeId = null;
+      let dragState = null;
+      let zIndexSeed = 1;
+
+      const palette = ['#38bdf8', '#22c55e', '#f97316', '#a855f7', '#f43f5e', '#0ea5e9'];
+
+      const createId = () => `node-${Math.random().toString(16).slice(2, 8)}-${Date.now().toString(16)}`;
+
+      const hexToRgba = (hex, alpha = 1) => {
+        const value = hex.replace('#', '');
+        const bigint = parseInt(value, 16);
+        const r = (bigint >> 16) & 255;
+        const g = (bigint >> 8) & 255;
+        const b = bigint & 255;
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+      };
+
+      const getNodeCenter = (node) => ({
+        x: node.x + node.width / 2,
+        y: node.y + node.height / 2
+      });
+
+      const updateNodeSize = (node) => {
+        const rect = node.element.getBoundingClientRect();
+        node.width = rect.width;
+        node.height = rect.height;
+      };
+
+      const positionNode = (node) => {
+        node.element.style.transform = `translate(${node.x}px, ${node.y}px)`;
+      };
+
+      const centerNode = (node) => {
+        const rect = workspace.getBoundingClientRect();
+        node.x = rect.width / 2 - node.width / 2;
+        node.y = rect.height / 2 - node.height / 2;
+        positionNode(node);
+      };
+
+      const applyDepthStyle = (node) => {
+        const accent = node.parentId ? palette[node.depth % palette.length] : '#38bdf8';
+        node.element.dataset.depth = node.depth;
+        node.element.style.setProperty('--accent-color', accent);
+        if (!node.element.dataset.root) {
+          node.element.style.borderColor = hexToRgba(accent, 0.65);
+          node.element.style.boxShadow = `0 26px 55px -38px ${hexToRgba(accent, 0.55)}`;
+        }
+      };
+
+      const bringToFront = (node) => {
+        zIndexSeed += 1;
+        node.element.style.zIndex = zIndexSeed;
+      };
+
+      const renderEdges = () => {
+        const rect = workspace.getBoundingClientRect();
+        canvas.setAttribute('width', rect.width);
+        canvas.setAttribute('height', rect.height);
+        canvas.setAttribute('viewBox', `0 0 ${rect.width} ${rect.height}`);
+        canvas.innerHTML = '';
+
+        nodes.forEach((node) => {
+          if (!node.parentId || !nodes.has(node.parentId)) return;
+          const parent = nodes.get(node.parentId);
+          const start = getNodeCenter(parent);
+          const end = getNodeCenter(node);
+          const distance = Math.hypot(end.x - start.x, end.y - start.y);
+          const curvature = Math.min(160, distance * 0.45);
+          const controlX = (start.x + end.x) / 2;
+          const controlY = (start.y + end.y) / 2 - curvature;
+          const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          const accent = node.element.style.getPropertyValue('--accent-color') || '#2563eb';
+          const stroke = accent.startsWith('#') ? hexToRgba(accent, 0.45) : accent;
+          path.setAttribute('d', `M ${start.x} ${start.y} Q ${controlX} ${controlY} ${end.x} ${end.y}`);
+          path.setAttribute('stroke', stroke);
+          canvas.appendChild(path);
+        });
+      };
+
+      const attachDragHandlers = (node) => {
+        const el = node.element;
+
+        el.addEventListener('pointerdown', (event) => {
+          event.preventDefault();
+          const rect = workspace.getBoundingClientRect();
+          dragState = {
+            node,
+            pointerId: event.pointerId,
+            offsetX: event.clientX - rect.left - node.x,
+            offsetY: event.clientY - rect.top - node.y
+          };
+          bringToFront(node);
+          el.classList.add('dragging');
+          el.setPointerCapture(event.pointerId);
+        });
+
+        el.addEventListener('pointermove', (event) => {
+          if (!dragState || dragState.pointerId !== event.pointerId) return;
+          const rect = workspace.getBoundingClientRect();
+          node.x = event.clientX - rect.left - dragState.offsetX;
+          node.y = event.clientY - rect.top - dragState.offsetY;
+          positionNode(node);
+          renderEdges();
+        });
+
+        const release = (event) => {
+          if (!dragState || dragState.pointerId !== event.pointerId) return;
+          el.classList.remove('dragging');
+          el.releasePointerCapture(event.pointerId);
+          dragState = null;
+        };
+
+        el.addEventListener('pointerup', release);
+        el.addEventListener('pointercancel', release);
+      };
+
+      const attachEditHandler = (node) => {
+        const el = node.element;
+        const label = el.querySelector('.node-label');
+
+        const edit = () => {
+          const currentSelection = parentSelect.value;
+          const value = prompt('编辑节点标题', node.label);
+          if (value === null) return;
+          const trimmed = value.trim();
+          if (!trimmed) return;
+          node.label = trimmed;
+          label.textContent = trimmed;
+          updateNodeSize(node);
+          updateParentOptions(currentSelection);
+          renderEdges();
+        };
+
+        el.addEventListener('dblclick', (event) => {
+          event.stopPropagation();
+          edit();
+        });
+
+        el.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            edit();
+          }
+        });
+      };
+
+      const createNode = ({ id = createId(), label, parentId = null, isRoot = false }) => {
+        const nodeEl = document.createElement('div');
+        nodeEl.className = 'node';
+        nodeEl.tabIndex = 0;
+
+        const titleSpan = document.createElement('span');
+        titleSpan.className = 'node-label';
+        titleSpan.textContent = label;
+        nodeEl.appendChild(titleSpan);
+
+        const hint = document.createElement('small');
+        hint.textContent = isRoot ? '拖动开始构思' : '双击编辑';
+        nodeEl.appendChild(hint);
+
+        const node = {
+          id,
+          label,
+          parentId,
+          depth: 0,
+          element: nodeEl,
+          childCount: 0,
+          x: 0,
+          y: 0,
+          width: 0,
+          height: 0
+        };
+
+        if (isRoot) {
+          nodeEl.dataset.root = 'true';
+          node.depth = 0;
+          rootNodeId = id;
+        } else if (parentId && nodes.has(parentId)) {
+          node.depth = nodes.get(parentId).depth + 1;
+        }
+
+        nodes.set(id, node);
+        workspace.appendChild(nodeEl);
+        updateNodeSize(node);
+
+        if (isRoot) {
+          centerNode(node);
+        } else if (parentId && nodes.has(parentId)) {
+          const parent = nodes.get(parentId);
+          const parentCenter = getNodeCenter(parent);
+          const angleStep = (Math.PI * 2) / 6;
+          const angleIndex = parent.childCount % 6;
+          const ring = Math.floor(parent.childCount / 6);
+          const angle = angleIndex * angleStep - Math.PI;
+          const distance = 170 + ring * 90 + parent.depth * 45;
+          const centerX = parentCenter.x + Math.cos(angle) * distance;
+          const centerY = parentCenter.y + Math.sin(angle) * distance;
+          node.x = centerX - node.width / 2;
+          node.y = centerY - node.height / 2;
+          parent.childCount += 1;
+          positionNode(node);
+        } else {
+          centerNode(node);
+        }
+
+        positionNode(node);
+        applyDepthStyle(node);
+        attachDragHandlers(node);
+        attachEditHandler(node);
+        renderEdges();
+        return node;
+      };
+
+      const updateParentOptions = (preserveId) => {
+        const fallback = rootNodeId;
+        const current = preserveId && nodes.has(preserveId) ? preserveId : (parentSelect.value && nodes.has(parentSelect.value) ? parentSelect.value : fallback);
+        parentSelect.innerHTML = '';
+        nodes.forEach((node) => {
+          const option = document.createElement('option');
+          option.value = node.id;
+          option.textContent = node.label;
+          parentSelect.appendChild(option);
+        });
+        if (current && nodes.has(current)) {
+          parentSelect.value = current;
+        }
+      };
+
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const titleInput = document.getElementById('node-title');
+        const raw = titleInput.value.trim();
+        if (!raw) return;
+        const selectedParent = parentSelect.value || rootNodeId;
+        createNode({ label: raw, parentId: selectedParent });
+        updateParentOptions(selectedParent);
+        form.reset();
+        parentSelect.value = selectedParent;
+        titleInput.focus();
+      });
+
+      resetButton.addEventListener('click', () => {
+        if (nodes.size <= 1) return;
+        if (!confirm('确定要重置导图吗？所有分支都会被清除。')) return;
+        for (const [id, node] of Array.from(nodes.entries())) {
+          if (id === rootNodeId) {
+            node.childCount = 0;
+            updateNodeSize(node);
+            centerNode(node);
+            continue;
+          }
+          node.element.remove();
+          nodes.delete(id);
+        }
+        updateParentOptions(rootNodeId);
+        renderEdges();
+      });
+
+      window.addEventListener('resize', () => {
+        renderEdges();
+      });
+
+      const root = createNode({ id: 'root', label: '中心主题', isRoot: true });
+      updateParentOptions(root.id);
+      parentSelect.value = root.id;
+      renderEdges();
+    })();
+  </script>
+</body>
+</html>
