@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>星际漫游 - 简单 Web 项目</title>
+  <link rel="stylesheet" href="assets/css/styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <h1 class="logo">星际漫游</h1>
+      <nav class="site-nav" aria-label="主导航">
+        <a href="#features">特色</a>
+        <a href="#gallery">星图</a>
+        <a href="#planner">旅程规划</a>
+        <a href="#footer">联系</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container">
+        <div class="hero-content">
+          <h2>开启你的第一次太空之旅</h2>
+          <p>
+            "星际漫游" 是一个简单的 Web 小项目，展示了如何组合 HTML、CSS 与 JavaScript
+            打造一个视觉清晰、交互友好的单页体验。
+          </p>
+          <button id="fact-button" class="primary-btn">获取随机太空小知识</button>
+          <p id="fact-display" class="fact-display" role="status" aria-live="polite"></p>
+        </div>
+        <figure class="hero-visual" aria-hidden="true">
+          <img src="https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&w=900&q=80" alt="璀璨的星空" loading="lazy" />
+        </figure>
+      </div>
+    </section>
+
+    <section id="features" class="features">
+      <div class="container">
+        <h2>项目特色</h2>
+        <div class="feature-grid">
+          <article>
+            <h3>结构清晰</h3>
+            <p>简洁的 HTML 语义结构，易于拓展与维护。</p>
+          </article>
+          <article>
+            <h3>响应式布局</h3>
+            <p>借助 CSS Grid 与 Flexbox，内容在不同设备上都能舒适呈现。</p>
+          </article>
+          <article>
+            <h3>轻量交互</h3>
+            <p>使用原生 JavaScript 实现按钮交互，兼顾性能与易理解性。</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="gallery" class="gallery">
+      <div class="container">
+        <h2>星图一览</h2>
+        <div class="gallery-grid">
+          <figure>
+            <img src="https://images.unsplash.com/photo-1462332420958-a05d1e002413?auto=format&fit=crop&w=600&q=80" alt="星云" loading="lazy" />
+            <figcaption>猎户座星云</figcaption>
+          </figure>
+          <figure>
+            <img src="https://images.unsplash.com/photo-1444703686981-a3abbc4d4fe3?auto=format&fit=crop&w=600&q=80" alt="星系" loading="lazy" />
+            <figcaption>仙女座星系</figcaption>
+          </figure>
+          <figure>
+            <img src="https://images.unsplash.com/photo-1454789548928-9efd52dc4031?auto=format&fit=crop&w=600&q=80" alt="行星" loading="lazy" />
+            <figcaption>遥远的系外行星</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section id="planner" class="planner">
+      <div class="container">
+        <h2>旅程规划器</h2>
+        <form id="planner-form" class="planner-form" aria-describedby="planner-tip">
+          <label for="planet-input">想去的星球</label>
+          <input id="planet-input" name="planet" type="text" placeholder="例如：火星" required />
+
+          <label for="days-input">旅程天数</label>
+          <input id="days-input" name="days" type="number" min="1" max="999" required />
+
+          <label for="goal-input">旅程目标</label>
+          <textarea id="goal-input" name="goal" rows="3" placeholder="例如：采集样本、拍摄星空" required></textarea>
+
+          <button type="submit" class="primary-btn">生成旅程概要</button>
+          <p id="planner-tip" class="tip">提交后会在下方生成你的专属旅程概要。</p>
+        </form>
+        <section id="plan-output" class="plan-output" aria-live="polite"></section>
+      </div>
+    </section>
+  </main>
+
+  <footer id="footer" class="site-footer">
+    <div class="container">
+      <p>由简单的 HTML、CSS、JavaScript 驱动 · 适合作为初学者的入门示例</p>
+      <p>
+        需要本地预览？在项目根目录运行 <code>python -m http.server</code>，然后访问
+        <a href="http://localhost:8000" target="_blank" rel="noreferrer">http://localhost:8000</a>。
+      </p>
+    </div>
+  </footer>
+
+  <script src="assets/js/app.js" defer></script>
+</body>
+</html>
